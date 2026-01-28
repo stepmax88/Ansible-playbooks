@@ -1,0 +1,92 @@
+---
+- name: Power on hosts
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  force_handlers: true
+  collections:
+  - community.general.ipmi_power
+  - community.hashi_vault
+  - dellemc.openmanage.redfish_powerstate
+  - community.general
+  vars:
+    ansible_hashi_vault_url: "https://vault.service.consul:8200"
+    ansible_hashi_vault_validate_certs: false
+    ansible_hashi_vault_token: ""
+    ipmi_ip:
+        - "<IP>"
+        - "<IP>"
+    idrac_ip:
+        - "<IP>"
+        - "<IP>"
+    telegram:
+         token:   ""
+         chat_id: ""
+
+  tasks:
+  - name: Install python packages
+    ansible.builtin.pip:
+      name:
+      - hvac
+      - pyghmi
+      executable: pip3
+
+  - name: "Powering on DELL and send Telegram"
+    block:
+      - name: "Powering on DELL"
+        dellemc.openmanage.redfish_powerstate:
+          baseuri: "{{ item }}:443"
+          username: "{{ lookup('hashi_vault', 'ansible/production/idrac:username') }}"
+          password: "{{ lookup('hashi_vault', 'ansible/production/idrac:password') }}"
+          reset_type: "On"
+          validate_certs: false
+        when:
+            - ansible_date_time.weekday in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+            - ansible_date_time.hour | int >= 8
+            - ansible_date_time.hour | int < 19
+        failed_when: false
+        register: task_power_idrac
+        loop: "{{ idrac_ip }}"
+
+      - name: Send notify to Telegram - Checking the status of ESXi hosts
+        telegram:
+          token: '{{ telegram.token }}'
+          api_args:
+            chat_id: "{{ telegram.chat_id }}"
+            parse_mode: "markdown"
+            text: "Send power on {{ item.item }} - result: {{ task_power_idrac.msg }}"
+            disable_web_page_preview: true
+            disable_notification: true
+            failed_when: false
+        when: item.changed
+        loop: "{{ task_power_idrac.results }}"
+
+  - name: "Powering on SUPERMICRO and send Telegram"
+    block:
+      - name: "Powering on SUPERMICRO"
+        ipmi_power:
+          name: "{{ item }}"
+          user: "{{ lookup('hashi_vault', 'ansible/production/ipmi:user') }}"
+          password: "{{ lookup('hashi_vault', 'ansible/production/ipmi:password') }}"
+          state: on
+        delegate_to: localhost
+        failed_when: false
+        when:
+            - ansible_date_time.weekday in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+            - ansible_date_time.hour | int >= 8
+            - ansible_date_time.hour | int < 19
+        register: task_power_ipmi
+        loop: "{{ ipmi_ip }}"
+
+      - name: Send notify to Telegram
+        telegram:
+          token: '{{ telegram.token }}'
+          api_args:
+            chat_id: "{{ telegram.chat_id }}"
+            parse_mode: "markdown"
+            text: "Send power on {{ item.item }} - result: {{ task_power_ipmi.msg }}  {{ tg_msg }}"
+            disable_web_page_preview: true
+            disable_notification: true
+            failed_when: false
+        when: item.changed
+        loop: "{{ task_power_ipmi.results }}"
