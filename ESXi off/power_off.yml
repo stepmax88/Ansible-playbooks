@@ -29,9 +29,9 @@
 
   - name: Set the state of a host system to power down to standby
     vmware_host_powerstate:
-      hostname: "{{ vcenterhostname | default(lookup('hashi_vault', 'ansible/production/esxi:vcenterhostname'), true) }}"
-      username: "{{ vcenterusername | default(lookup('hashi_vault', 'ansible/production/esxi:vcenterusername'), true) }}"
-      password: "{{ vcenterpassword | default(lookup('hashi_vault', 'ansible/production/esxi:vcenterpassword'), true) }}"
+      hostname: "{{ vcenterhostname | default(lookup('hashi_vault', '<path>/esxi:vcenterhostname'), true) }}"
+      username: "{{ vcenterusername | default(lookup('hashi_vault', '<path>/esxi:vcenterusername'), true) }}"
+      password: "{{ vcenterpassword | default(lookup('hashi_vault', '<path>/esxi:vcenterpassword'), true) }}"
       validate_certs: no
       esxi_hostname: "{{ item }}"
       state: shutdown-host

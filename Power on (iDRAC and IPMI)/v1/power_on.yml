@@ -36,8 +36,8 @@
       - name: "Powering on DELL"
         dellemc.openmanage.redfish_powerstate:
           baseuri: "{{ item }}:443"
-          username: "{{ lookup('hashi_vault', 'ansible/production/idrac:username') }}"
-          password: "{{ lookup('hashi_vault', 'ansible/production/idrac:password') }}"
+          username: "{{ lookup('hashi_vault', '<path>/idrac:username') }}"
+          password: "{{ lookup('hashi_vault', '<path>/idrac:password') }}"
           reset_type: "On"
           validate_certs: false
         when:
@@ -66,8 +66,8 @@
       - name: "Powering on SUPERMICRO"
         ipmi_power:
           name: "{{ item }}"
-          user: "{{ lookup('hashi_vault', 'ansible/production/ipmi:user') }}"
-          password: "{{ lookup('hashi_vault', 'ansible/production/ipmi:password') }}"
+          user: "{{ lookup('hashi_vault', '<path>/ipmi:user') }}"
+          password: "{{ lookup('hashi_vault', '<path>/ipmi:password') }}"
           state: on
         delegate_to: localhost
         failed_when: false
