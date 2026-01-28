@@ -45,7 +45,7 @@
     run_once: true
 
   - name: Loop with logical
-    include_tasks: task_power_on.yml
+    include_tasks: task.yml
     loop: "{{ (ipmi_host + idrac_host) | flatten }}"
 
   - name: Generate Report
