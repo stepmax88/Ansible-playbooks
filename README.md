@@ -7,3 +7,4 @@
 ### List Ansible Playbooks
 
 1. Playbooks for power off ESXi hosts (Notify Telegram)
+2. Playbooks for power on ESXi hosts (Notify Telegram and create reports)

@@ -1,0 +1,38 @@
+======================================================================
+                  POWER MANAGEMENT EXECUTION REPORT
+======================================================================
+Report Generated: {{ lookup('pipe', 'date "+%Y-%m-%d %H:%M:%S"') }}
+Execution User:   {{ lookup('env', 'USER') }}
+----------------------------------------------------------------------
+{% for host in ansible_play_batch %}
+[HOST: {{ host }}]
+----------------------------------------------------------------------
+{% set logs = hostvars[host].get('execution_log', []) %}
+{% if logs | length > 0 %}
+{% for entry in logs %}
+{% set idrac = entry.get('idrac_res', {}) %}
+{% set ipmi = entry.get('ipmi_res', {}) %}
+{% set is_changed = idrac.get('changed', false) or ipmi.get('changed', false) %}
+{% set is_skipped = idrac.get('skipped', false) and ipmi.get('skipped', false) %}
+{% set is_failed  = idrac.get('failed', false) or ipmi.get('failed', false) %}
+ITEM: {{ entry.item }}
+STATUS: {% if is_changed %}SUCCESS{% elif is_skipped %}SKIPPED{% elif is_failed %}FAILED{% else %}NO CHANGE{% endif %}
+
+REASON: {% if is_changed %}Power state changed (ON){% elif is_skipped %}Outside schedule or mismatch{% elif is_failed %}Command failed{% else %}Server already in requested state{% e
+
+{% if idrac.get('msg') %}
+IDRAC MESSAGE: {{ idrac.msg.strip() }}
+{% endif %}
+{% if ipmi.get('msg') %}
+IPMI MESSAGE: {{ ipmi.msg.strip() }}
+{% endif %}
+----------------------------------------------------------------------
+{% endfor %}
+{% else %}
+STATUS: NO DATA COLLECTED
+{% endif %}
+{% endfor %}
+======================================================================
+SUMMARY:
+- Total hosts processed: {{ ansible_play_batch | length }}
+======================================================================
